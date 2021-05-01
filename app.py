@@ -19,6 +19,7 @@ def image():
     cv2.imshow('image', image)
 
 
+
     return {
         "image": image.tolist()
     }
