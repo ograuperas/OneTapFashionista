@@ -7,13 +7,17 @@ CORS(app)
 
 @app.route('/coppelia', methods=['GET','POST'])
 def hello_world():
-    print(request.form['coppeliaid'])
-    if request.form['coppeliaid'] == '19999':
+
+    content = request.get_json()
+    resposta = content['coppeliaid']
+
+    if resposta == '19999':
         response = jsonify(res="ok")
     else:
         response = jsonify(res="notok")
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
+
 
 @app.route('/getObject.png')
 def image():
