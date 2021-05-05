@@ -1,9 +1,6 @@
 from flask import Flask, send_file, jsonify, request,send_from_directory
 from flask_cors import CORS
 import json
-import os
-import cv2
-from PIL import Image
 
 app = Flask(__name__)
 CORS(app)
