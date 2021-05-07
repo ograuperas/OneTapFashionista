@@ -1,32 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:hexcolor/hexcolor.dart';
+import 'package:sm_flutter/pages/ColorPickerPage.dart';
+import 'package:sm_flutter/pages/homePage.dart';
+import 'package:sm_flutter/pages/imagePage.dart';
 
 void main() {
   runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() {
-    return _MyAppState();
-  }
-}
-
-class _MyAppState extends State<MyApp> {
+class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        body: Column(
-          children: <Widget>[
-            Text('ok1'),
-            //importar imatge
-            RaisedButton(//Elevated button
-               child: Text('start now'),
-               onPressed: null,
-            ),
-          ],
-        ),
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // Try running your application with "flutter run". You'll see the
+        // application has a blue toolbar. Then, without quitting the app, try
+        // changing the primarySwatch below to Colors.green and then invoke
+        // "hot reload" (press "r" in the console where you ran "flutter run",
+        // or simply save your changes to "hot reload" in a Flutter IDE).
+        // Notice that the counter didn't reset back to zero; the application
+        // is not restarted.
+        primaryColor: HexColor('#75CD9B'),
       ),
+      initialRoute: '/',
+      routes: {
+        '/': (ctx) => HomePage(),
+
+        ImagePage.routeName: (ctx) => ImagePage(),
+        ColorPickerPage.routeName: (ctx) => ColorPickerPage(),
+      },
     );
   }
 }
+

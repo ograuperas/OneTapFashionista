@@ -4,7 +4,8 @@ import json
 
 app = Flask(__name__)
 CORS(app)
-
+"""
+#EXEMPLE FUNCIONA
 @app.route('/coppelia', methods=['GET','POST'])
 def hello_world():
 
@@ -29,6 +30,24 @@ def points():
     l = [[10,20],[120,200]]
 
     return json.dumps(l)
+
+-> possibles endpoints: 
+     1) rebre una imatge,
+        identificar peçes de roba -> si 0 error
+        guardar imatge a bd
+        
+    2)  rebre id imatge bd i color
+        canviar color
+        retornar imatge
+        
+    
+
+"""
+
+
+
+
+
 
 if __name__ == '__main__':
     app.run()
