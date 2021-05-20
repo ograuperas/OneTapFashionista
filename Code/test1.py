@@ -7,6 +7,8 @@ import git
 import sys
 import os
 import subprocess
+from test2.py import main2
+
 
 
 if os.path.exists('Self-Correction-Human-Parsing') == False:
@@ -38,11 +40,8 @@ os.chdir('inputs')
 
 os.chdir('..')
 
-
-
-
-
-os.system('python simple_extractor.py')
+main2()
+#("python3 simple_extractor.py --dataset 'lip' --model-restore 'checkpoints/final.pth' --input-dir 'inputs' --output-dir 'outputs' ")
 
 
 
