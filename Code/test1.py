@@ -35,7 +35,10 @@ def get_palette(num_cls):
             palette[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
             i += 1
             lab >>= 3
-    return palette
+
+    palette = np.asarray(palette) # change to array
+    palette= np.reshape(palette,(20,3)) # split it in 20 triplets (r,g,b)
+    return palette.astype("uint8") # cast to uint8 and return
 
 
 def is_label_in_image(img, string_label, LABELS_utils, colors_utils):
@@ -48,7 +51,60 @@ def is_label_in_image(img, string_label, LABELS_utils, colors_utils):
         return False, mask
     else:
         return True, mask
-    
+
+def adjust_pattern(img, pattern):
+    h, w = img.shape[0], img.shape[1]
+    hp, wp = pattern.shape[0], pattern.shape[1]
+
+    if(h < hp):
+        pattern = pattern[:h,:,:]
+    else:
+        pattern = cv2.vconcat([pattern,pattern[:h-hp,:,:]])
+
+    if(w < wp):
+        pattern = pattern[:,:w,:]
+    else:
+        pattern = cv2.hconcat([pattern, pattern[:,:w-wp,:]])
+
+    return pattern
+
+
+
+def change_pattern(img, mask_uint8, pattern):
+    input_img_no_clothes = img.copy()
+    input_img_no_clothes[:, :, 0] = cv2.bitwise_not(mask_uint8) * img[:, :, 0]
+    input_img_no_clothes[:, :, 1] = cv2.bitwise_not(mask_uint8) * img[:, :, 1]
+    input_img_no_clothes[:, :, 2] = cv2.bitwise_not(mask_uint8) * img[:, :, 2]
+    input_img_no_clothes = input_img_no_clothes * 255
+    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
+
+    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
+    img[:, :, 0] = img_gray
+    img[:, :, 1] = img_gray
+    img[:, :, 2] = img_gray
+    # adjust pattern to image size
+
+    pattern = adjust_pattern(img, pattern)
+
+    img = img / 255
+    mask_uint8 = mask_uint8 / 255
+    pattern = pattern / 255
+    # np.multiply(m, m) multiplicación punto a punto de dos matrices. Funciona pero need to me same size
+    img[:, :, 0] = np.multiply(img[:, :, 0], (mask_uint8 * pattern[:, :, 0]))
+    img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * pattern[:, :, 1]))
+    img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * pattern[:, :, 2]))
+
+    img = img * 255
+
+    img = img.astype('uint8')
+
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
+
+    img = input_img_no_clothes + img
+    return img
+
+
 
 
 def change_colour(img, mask_uint8, colour_rgb):
@@ -58,7 +114,7 @@ def change_colour(img, mask_uint8, colour_rgb):
     input_img_no_clothes[:,:,1] = cv2.bitwise_not(mask_uint8)*img[:,:,1]
     input_img_no_clothes[:,:,2] = cv2.bitwise_not(mask_uint8)*img[:,:,2]
     input_img_no_clothes = input_img_no_clothes*255
-    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.show()
+    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
     
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
@@ -75,65 +131,44 @@ def change_colour(img, mask_uint8, colour_rgb):
     img[:,:,2] = img[:,:,2]*(mask_uint8*colour_rgb[2])
 
     img = img*255
-    mask_uint8 = mask_uint8*255
-    colour_rgb = colour_rgb*255
-    
     img = img.astype('uint8')
-    mask_uint8 = mask_uint8.astype('uint8')
-    colour_rgb = colour_rgb.astype('uint8')
-    
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.show()
+
+    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
     
     img = input_img_no_clothes + img
     return img
 
-
-
-def get_colours():
-    colors = get_palette(20)
-    colors = np.asarray(colors)
-    colors_utils = np.reshape(colors,(20,3))
-       
-    colors_utils = colors_utils.astype("uint8")
-    return colors_utils
-
-
 if __name__ == "__main__":
-    
-    
-    
+
     im_input = cv2.imread('images/in.jpg')
     im_output = cv2.imread('images/out.png')
     
-    
-    colors_utils = get_colours()
-    
+    colors = get_palette(20)
     
     LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat', \
           'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
           'Right-leg', 'Left-shoe', 'Right-shoe']
         
-    LABELS_K_VOLS = ['Coat', 'Upper-clothes']
-    rgbs = [[128,128,128], [128,128,128]]
-    
+    LABELS_K_VOLS = ['Upper-clothes']
+    rgbs = [[50, 231, 241], [128,128,128]]
+
     for x, label in enumerate(LABELS_K_VOLS):
-        cloth_in_image, mask = is_label_in_image(im_output, label, LABELS_utils, colors_utils)
-        plt.imshow(cv2.cvtColor(im_output, cv2.COLOR_BGR2RGB)), plt.show()
+        cloth_in_image, mask = is_label_in_image(im_output, label, LABELS_utils, colors)
+        plt.imshow(cv2.cvtColor(im_output, cv2.COLOR_BGR2RGB)), plt.suptitle('Cloth detections'), plt.show()
         
         mask_uint8 = mask.astype('uint8')*255
-        plt.imshow(cv2.cvtColor(mask_uint8, cv2.COLOR_BGR2RGB)), plt.show()
+        plt.imshow(cv2.cvtColor(mask_uint8, cv2.COLOR_BGR2RGB)), plt.suptitle('Matching pixels with label'), plt.show()
         
-        plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.show()
-        
-        
-        rgb = rgbs[x]
-        rgb = np.asarray(rgb)
-        rgb = np.flip(rgb)
-        
+        plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Source Image'), plt.show()
+
+        rgb = np.flip(np.asarray(rgbs[x]))
+
+        pattern=cv2.imread('patterns/heads.jpg')
+
         if cloth_in_image:
-            im_input = change_colour(im_input, mask_uint8, rgb)
+            im_input = change_pattern(im_input, mask_uint8, pattern)
         
-            plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.show()
+            plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Final Result'), plt.show()
         
             
         else:
