@@ -59,11 +59,17 @@ def adjust_pattern(img, pattern):
     if(h < hp):
         pattern = pattern[:h,:,:]
     else:
+        while (hp < (h-hp)):
+            pattern=cv2.vconcat([pattern,pattern[:hp,:,:]])
+            hp = pattern.shape[0]
         pattern = cv2.vconcat([pattern,pattern[:h-hp,:,:]])
 
     if(w < wp):
         pattern = pattern[:,:w,:]
     else:
+        while (wp < (w-wp)):
+            pattern=cv2.hconcat([pattern,pattern[:,:wp,:]])
+            wp = pattern.shape[1]
         pattern = cv2.hconcat([pattern, pattern[:,:w-wp,:]])
 
     return pattern
@@ -140,8 +146,8 @@ def change_colour(img, mask_uint8, colour_rgb):
 
 if __name__ == "__main__":
 
-    im_input = cv2.imread('images/in.jpg')
-    im_output = cv2.imread('images/out.png')
+    im_input = cv2.imread('images/black.jpg')
+    im_output = cv2.imread('images/blackout.png')
     
     colors = get_palette(20)
     
@@ -149,7 +155,7 @@ if __name__ == "__main__":
           'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
           'Right-leg', 'Left-shoe', 'Right-shoe']
         
-    LABELS_K_VOLS = ['Upper-clothes']
+    LABELS_K_VOLS = ['Coat']
     rgbs = [[50, 231, 241], [128,128,128]]
 
     for x, label in enumerate(LABELS_K_VOLS):
@@ -163,28 +169,12 @@ if __name__ == "__main__":
 
         rgb = np.flip(np.asarray(rgbs[x]))
 
-        pattern=cv2.imread('patterns/heads.jpg')
+        pattern=cv2.imread('patterns/blue_feathers.jpg')
 
-        if cloth_in_image:
-            im_input = change_pattern(im_input, mask_uint8, pattern)
-        
-            plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Final Result'), plt.show()
-        
-            
-        else:
-            print('no hi ha peça roba k dius titu')
-    
+        #im_input = change_colour(im_input, mask_uint8, rgb)
+        im_input = change_pattern(im_input, mask_uint8, pattern)
+        plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Final Result'), plt.show()
 
 
 
-
-
-
-
-
-
-
-
-
-
-        
+    cv2.imwrite("images/final.png", im_input)
