@@ -43,6 +43,17 @@ def points():
     
 
 """
+@app.route('/getImage', methods=['GET','POST'])
+def hello_world():
+
+    content = request.get_json()
+    resposta = content['image']
+    print(resposta)
+
+    response = jsonify(res="ok")
+
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
 
 
