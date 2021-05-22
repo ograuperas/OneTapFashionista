@@ -5,7 +5,6 @@ import git
 import sys
 import os
 import subprocess
-from test2.py import main2
 
 
 def dowload_model():
