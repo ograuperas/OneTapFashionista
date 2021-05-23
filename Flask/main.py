@@ -28,7 +28,7 @@ def getImage():
 
     #TODO MODEL RETURN OUTPUT
 
-    im_output = cv2.imread('O:\Escriptori\SM\Flask\img\out\out.png')
+    im_output = cv2.imread('img\out\out.png')
 
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
@@ -50,17 +50,17 @@ def returnImage():
     resposta = content
     print(resposta)
 
-    im_input = cv2.imread('O:\Escriptori\SM\Flask\img\in\in.jpg') #input Model
-    im_output = cv2.imread('O:\Escriptori\SM\Flask\img\out\out.png') #Output Model
+    im_input = cv2.imread('img\in\in.jpg') #input Model
+    im_output = cv2.imread('img\out\out.png') #Output Model
 
     colors = utils.get_palette(20)
     global LABELS_utils
 
     iconMap = {10: 'Hat', 8: 'Upper-clothes', 2: 'Dress', 9: 'Coat', 6: 'Socks', 1: 'Pants', 7: 'Jumpsuits', 3: 'Scarf', 5: 'Skirt'}
-    textureMap = {0: 'O:/Escriptori/SM/Flask/patterns/blue_feathers.jpg',
-                  1: 'O:/Escriptori/SM/Flask/patterns/blue_feathers.jpg',
-                  2: 'O:/Escriptori/SM/Flask/patterns/heads.jpg',
-                  3: 'O:/Escriptori/SM/Flask/patterns/olivo.jpg'}
+    textureMap = {0: 'patterns/blue_feathers.jpg',
+                  1: 'patterns/blue_feathers.jpg',
+                  2: 'patterns/heads.jpg',
+                  3: 'patterns/olivo.jpg'}
 
     LABELS_K_VOLS = iconMap[resposta['roba']]
 
