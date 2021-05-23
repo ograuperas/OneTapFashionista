@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from training_model import * 
+#from training_model import * 
 
 """
 !git clone https://github.com/PeikeLi/Self-Correction-Human-Parsing
@@ -171,20 +171,45 @@ def change_colour(img, mask_uint8, colour_rgb):
     img = input_img_no_clothes + img
     return img
 
+
+def return_labels(im_output, LABELS_utils, colors):
+
+    labels = []
+    
+    llista_negra = ['Background', 'Hair', 'Glove', 'Sunglasses', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
+          'Right-leg', 'Left-shoe', 'Right-shoe']
+    
+    for label in LABELS_utils:
+        bool_label, _ = is_label_in_image(im_output, label, LABELS_utils, colors)
+        if bool_label == True:
+            bool2 = label in llista_negra
+            if bool2 == False:
+                labels.append(label)
+    
+    return labels
+            
+    
+
 if __name__ == "__main__":
 
-    dowload_model()
-    make_prediction()
+    #dowload_model()
+    #make_prediction()
     
-    im_input = cv2.imread('images/black.jpg')
-    im_output = cv2.imread('images/blackout.png')
+    im_input = cv2.imread('images/in.jpg')
+    im_output = cv2.imread('images/out.png')
 
+   
+    
     colors = get_palette(20)
 
+    
     LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat',
           'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
           'Right-leg', 'Left-shoe', 'Right-shoe']
-        
+
+    
+    labels_in_image = return_labels(im_output, LABELS_utils, colors)
+    
     LABELS_K_VOLS = ['Coat']
     rgbs = [[50, 231, 241], [128,128,128]]
 
