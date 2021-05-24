@@ -1,7 +1,6 @@
 # ONE TAP FASHIONISTA
 ### What is One Tap Fashionista? 
 
-## Demonstration
 ## Software achitecture
 ## Authors
 
