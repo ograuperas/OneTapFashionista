@@ -8,6 +8,7 @@ import PIL.Image as Image
 import numpy as np
 import matplotlib.pyplot as plt
 from werkzeug.serving import WSGIRequestHandler
+
 import utils
 
 app = Flask(__name__)
@@ -26,12 +27,11 @@ def getImage():
     nparr = np.frombuffer(image, np.uint8)
     im_input = cv2.imdecode(nparr, 1)
 
-    #TODO MODEL RETURN OUTPUT
-
     im_output = utils.return_mask(im_input)
 
-    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in.jpg', im_input)
-    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out.png', im_output)
+    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
+    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out1.png', im_output)
+
 
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
@@ -53,17 +53,16 @@ def returnImage():
     resposta = content
     print(resposta)
 
-    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/in.jpg') #input Model
-    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/out.png') #Output Model
+    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/in1.jpg') #input Model
+    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/out1.png') #Output Model
 
     colors = utils.get_palette(20)
     global LABELS_utils
 
     iconMap = {10: 'Hat', 8: 'Upper-clothes', 2: 'Dress', 9: 'Coat', 6: 'Socks', 1: 'Pants', 7: 'Jumpsuits', 3: 'Scarf', 5: 'Skirt'}
     textureMap = {0: 'O:/Escriptori/SM/Flask/patterns/blue_feathers.jpg',
-                  1: 'O:/Escriptori/SM/Flask/patterns/blue_feathers.jpg',
-                  2: 'O:/Escriptori/SM/Flask/patterns/heads.jpg',
-                  3: 'O:/Escriptori/SM/Flask/patterns/olivo.jpg'}
+                  1: 'O:/Escriptori/SM/Flask/patterns/heads.jpg',
+                  2: 'O:/Escriptori/SM/Flask/patterns/olivo.jpg'}
 
     LABELS_K_VOLS = iconMap[resposta['roba']]
 
@@ -80,21 +79,12 @@ def returnImage():
     else:
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
-    
-    for i in range(50):
-        path = 'O:/Escriptori/SM/Flask/img/in/in_edit' + str(i) +'.png'
-        if path.isdir(path)):
-            cv2.imwrite(path, im_input)
-            break
-    
+
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
 
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
-    
-    
-    
     return response
 
 if __name__ == '__main__':
