@@ -16,10 +16,15 @@ CORS(app)
 LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat',
                     'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
                     'Right-leg', 'Left-shoe', 'Right-shoe']
+input_image = ''
+output_image = ''
 
 @app.route('/getImage', methods=['GET', 'POST'])
 def getImage():
     global LABELS_utils
+    global input_image
+    global output_image
+
     content = request.get_json()
     resposta = content['image']
 
@@ -27,11 +32,11 @@ def getImage():
     nparr = np.frombuffer(image, np.uint8)
     im_input = cv2.imdecode(nparr, 1)
 
-    im_output = utils.return_mask(im_input)
+    im_output,input_image,output_image = utils.return_mask(im_input)
 
-    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
-    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out1.png', im_output)
-
+    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
+    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out1.png', im_output)
+    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/out/' + output_image)  # Output Model
 
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
@@ -49,12 +54,14 @@ def getImage():
 
 @app.route('/returnImage', methods=['GET', 'POST'])
 def returnImage():
+    global input_image
+    global output_image
     content = request.get_json()
     resposta = content
     print(resposta)
 
-    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/in1.jpg') #input Model
-    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/out1.png') #Output Model
+    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/in/' + input_image) #input Model
+    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/out/' + output_image) #Output Model
 
     colors = utils.get_palette(20)
     global LABELS_utils

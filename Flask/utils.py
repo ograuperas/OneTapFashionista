@@ -139,51 +139,47 @@ def change_pattern(img, mask_uint8, pattern):
 
 
 def change_colour(img, mask_uint8, colour_rgb):
-
     input_img_no_clothes = img.copy()
-    input_img_no_clothes[:,:,0] = cv2.bitwise_not(mask_uint8)*img[:,:,0]
-    input_img_no_clothes[:,:,1] = cv2.bitwise_not(mask_uint8)*img[:,:,1]
-    input_img_no_clothes[:,:,2] = cv2.bitwise_not(mask_uint8)*img[:,:,2]
-    input_img_no_clothes = input_img_no_clothes*255
-    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
-
+    input_img_no_clothes[:, :, 0] = cv2.bitwise_not(mask_uint8) * img[:, :, 0]
+    input_img_no_clothes[:, :, 1] = cv2.bitwise_not(mask_uint8) * img[:, :, 1]
+    input_img_no_clothes[:, :, 2] = cv2.bitwise_not(mask_uint8) * img[:, :, 2]
+    input_img_no_clothes = input_img_no_clothes * 255
+    #plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
 
     im_shape = img.copy()
 
-    im_shape[:,:,0] = mask_uint8*img[:,:,0]
-    im_shape[:,:,1] = mask_uint8*img[:,:,1]
-    im_shape[:,:,2] = mask_uint8*img[:,:,2]
+    im_shape[:, :, 0] = mask_uint8 * img[:, :, 0]
+    im_shape[:, :, 1] = mask_uint8 * img[:, :, 1]
+    im_shape[:, :, 2] = mask_uint8 * img[:, :, 2]
 
     im_shape = im_shape * 255
 
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
+    #plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
 
     im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
     im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
     im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
 
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('canny'), plt.show()
+   # plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('canny'), plt.show()
 
     im_shape = im_shape.astype(bool)
     im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
-    im_shape_def= im_shape_def.astype('uint8')
+    im_shape_def = im_shape_def.astype('uint8')
 
     kernel = np.ones((3, 3), np.uint8)
     im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
 
-    plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
+    #plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
 
-
-        
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
-    img[:,:,0] = img_gray
-    img[:,:,1] = img_gray
-    img[:,:,2] = img_gray
+    img[:, :, 0] = img_gray
+    img[:, :, 1] = img_gray
+    img[:, :, 2] = img_gray
 
-    img = img/255
-    mask_uint8 = mask_uint8/255
-    colour_rgb = colour_rgb/255
+    img = img / 255
+    mask_uint8 = mask_uint8 / 255
+    colour_rgb = colour_rgb / 255
 
     masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
     img[masked_non_shape > 0] = 0.85
@@ -193,10 +189,10 @@ def change_colour(img, mask_uint8, colour_rgb):
     img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * colour_rgb[1]))
     img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * colour_rgb[2]))
 
-    img = img*255
+    img = img * 255
     img = img.astype('uint8')
 
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
+    #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
 
     img = input_img_no_clothes + img
     return img
@@ -217,18 +213,15 @@ def return_labels(im_output, LABELS_utils, colors):
 
     return labels
 
+
 def return_mask(im_input):
-    
-    
-    
-    for i in range(1,6):
-        im_output = cv2.imread('/img/out/out' + str(i) '.png')
-        
+
+    for i in range(1, 6):
+
+        im_output = cv2.imread('/workspace/img/out/out' + str(i) + '.png')
+
         if im_output.shape[0] == im_input.shape[0] and im_output.shape[1] == im_input.shape[1]:
-            
-            return im_output
+            glob_in = 'in' + str(i) + '.jpg'
+            glob_out = 'out' + str(i) + '.png'
 
-
-
-
-
+            return im_output, glob_in, glob_out
