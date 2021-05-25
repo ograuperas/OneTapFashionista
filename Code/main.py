@@ -149,6 +149,34 @@ def change_colour(img, mask_uint8, colour_rgb):
     input_img_no_clothes = input_img_no_clothes*255
     plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
 
+
+    im_shape = img.copy()
+
+    im_shape[:,:,0] = mask_uint8*img[:,:,0]
+    im_shape[:,:,1] = mask_uint8*img[:,:,1]
+    im_shape[:,:,2] = mask_uint8*img[:,:,2]
+
+    im_shape = im_shape * 255
+
+    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
+
+    im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
+    im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
+    im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
+
+    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('canny'), plt.show()
+
+    im_shape = im_shape.astype(bool)
+    im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
+    im_shape_def= im_shape_def.astype('uint8')
+
+    kernel = np.ones((3, 3), np.uint8)
+    im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
+
+    plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
+
+
+        
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
     img[:,:,0] = img_gray
@@ -159,9 +187,13 @@ def change_colour(img, mask_uint8, colour_rgb):
     mask_uint8 = mask_uint8/255
     colour_rgb = colour_rgb/255
 
-    img[:,:,0] = img[:,:,0]*(mask_uint8*colour_rgb[0])
-    img[:,:,1] = img[:,:,1]*(mask_uint8*colour_rgb[1])
-    img[:,:,2] = img[:,:,2]*(mask_uint8*colour_rgb[2])
+    masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
+    img[masked_non_shape > 0] = 0.85
+    img[masked_non_shape == 0] *= 1.5
+    # np.multiply(m, m) multiplicación punto a punto de dos matrices. Funciona pero need to me same size
+    img[:, :, 0] = np.multiply(img[:, :, 0], (mask_uint8 * colour_rgb[0]))
+    img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * colour_rgb[1]))
+    img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * colour_rgb[2]))
 
     img = img*255
     img = img.astype('uint8')
@@ -211,7 +243,7 @@ if __name__ == "__main__":
     labels_in_image = return_labels(im_output, LABELS_utils, colors)
     
     LABELS_K_VOLS = ['Coat']
-    rgbs = [[50, 231, 241], [128,128,128]]
+    rgbs = [[255,0,255],[50, 231, 241], [128,128,128]]
 
     for x, label in enumerate(LABELS_K_VOLS):
         cloth_in_image, mask = is_label_in_image(im_output, label, LABELS_utils, colors)
@@ -226,8 +258,8 @@ if __name__ == "__main__":
 
         pattern=cv2.imread('patterns/blue_feathers.jpg')
 
-        #im_input = change_colour(im_input, mask_uint8, rgb)
-        im_input = change_pattern(im_input, mask_uint8, pattern)
+        im_input = change_colour(im_input, mask_uint8, rgb)
+        #im_input = change_pattern(im_input, mask_uint8, pattern)
         plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Final Result'), plt.show()
 
 
