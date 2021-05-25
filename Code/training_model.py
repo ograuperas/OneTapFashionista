@@ -45,7 +45,7 @@ def get_palette(num_cls):
             lab >>= 3
     return palette
 
-def predict(model_path, input_dir, output_dir)
+def predict(model_path, input_dir, output_dir):
 
 
     os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu

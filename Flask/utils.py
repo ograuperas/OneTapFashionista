@@ -184,3 +184,19 @@ def return_labels(im_output, LABELS_utils, colors):
                 labels.append(label)
 
     return labels
+
+def return_mask(im_input):
+    
+    
+    
+    for i in range(1,6):
+        im_output = cv2.imread('O:/Escriptori/SM/Flask/img/out/out' + str(i) '.png')
+        
+        if im_output.shape[0] == im_input.shape[0] and im_output.shape[1] == im_input.shape[1]:
+            
+            return im_output
+
+
+
+
+

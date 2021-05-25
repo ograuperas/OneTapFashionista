@@ -28,8 +28,10 @@ def getImage():
 
     #TODO MODEL RETURN OUTPUT
 
-    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/out/out.png')
+    im_output = utils.return_mask(im_input)
 
+    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in.jpg', im_input)
+    cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out.png', im_output)
 
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
@@ -51,8 +53,8 @@ def returnImage():
     resposta = content
     print(resposta)
 
-    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/in/in.jpg') #input Model
-    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/out/out.png') #Output Model
+    im_input = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/in.jpg') #input Model
+    im_output = cv2.imread('O:/Escriptori/SM/Flask/img/actuals/out.png') #Output Model
 
     colors = utils.get_palette(20)
     global LABELS_utils
@@ -78,12 +80,21 @@ def returnImage():
     else:
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
-
+    
+    for i in range(50):
+        path = 'O:/Escriptori/SM/Flask/img/in/in_edit' + str(i) +'.png'
+        if path.isdir(path)):
+            cv2.imwrite(path, im_input)
+            break
+    
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
 
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
+    
+    
+    
     return response
 
 if __name__ == '__main__':
