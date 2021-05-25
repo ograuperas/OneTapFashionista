@@ -1,13 +1,9 @@
 import cv2
 from flask import Flask, send_file, jsonify, request, send_from_directory
 from flask_cors import CORS
-import json
-import io
-import os
-import PIL.Image as Image
 import numpy as np
-import matplotlib.pyplot as plt
 from werkzeug.serving import WSGIRequestHandler
+
 import utils
 
 app = Flask(__name__)
@@ -16,6 +12,10 @@ LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-cloth
                     'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
                     'Right-leg', 'Left-shoe', 'Right-shoe']
 
+@app.route('/try', methods=['GET', 'POST'])
+def hello():
+    return jsonify(res='0w0')
+    
 @app.route('/getImage', methods=['GET', 'POST'])
 def getImage():
     global LABELS_utils
@@ -26,9 +26,11 @@ def getImage():
     nparr = np.frombuffer(image, np.uint8)
     im_input = cv2.imdecode(nparr, 1)
 
-    #TODO MODEL RETURN OUTPUT
+    im_output = utils.return_mask(im_input)
 
-    im_output = cv2.imread('img\out\out.png')
+    cv2.imwrite('./img/actuals/in1.jpg', im_input)
+    cv2.imwrite('./img/actuals/out1.png', im_output)
+
 
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
@@ -50,17 +52,16 @@ def returnImage():
     resposta = content
     print(resposta)
 
-    im_input = cv2.imread('img\in\in.jpg') #input Model
-    im_output = cv2.imread('img\out\out.png') #Output Model
+    im_input = cv2.imread('./img/actuals/in1.jpg') #input Model
+    im_output = cv2.imread('./img/actuals/out1.png') #Output Model
 
     colors = utils.get_palette(20)
     global LABELS_utils
 
     iconMap = {10: 'Hat', 8: 'Upper-clothes', 2: 'Dress', 9: 'Coat', 6: 'Socks', 1: 'Pants', 7: 'Jumpsuits', 3: 'Scarf', 5: 'Skirt'}
-    textureMap = {0: 'patterns/blue_feathers.jpg',
-                  1: 'patterns/blue_feathers.jpg',
-                  2: 'patterns/heads.jpg',
-                  3: 'patterns/olivo.jpg'}
+    textureMap = {0: './patterns/blue_feathers.jpg',
+                  1: './SM/Flask/patterns/heads.jpg',
+                  2: './Flask/patterns/olivo.jpg'}
 
     LABELS_K_VOLS = iconMap[resposta['roba']]
 
@@ -88,4 +89,5 @@ def returnImage():
 if __name__ == '__main__':
     WSGIRequestHandler.protocol_version = "HTTP/1.1"  # keep alive
     app.run()
-#python3 simple_extractor.py --dataset 'lip' --model-restore 'checkpoints/final.pth' --input-dir 'inputs' --output-dir 'outputs'
+
+
