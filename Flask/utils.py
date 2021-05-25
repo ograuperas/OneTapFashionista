@@ -166,7 +166,7 @@ def change_colour(img, mask_uint8, colour_rgb):
     im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
     im_shape_def = im_shape_def.astype('uint8')
 
-    kernel = np.ones((3, 3), np.uint8)
+    kernel = np.ones((1, 1), np.uint8)
     im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
 
     #plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
