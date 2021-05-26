@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 !mkdir outputs
 """
 
-
+#retorna la paleta de colors que utilitza el model de segmentacio de rob
+#a (un numpy array amb els colors rgb de cada label possible en la imatge de segmentacio)
 def get_palette(num_cls):
     """ Returns the color map for visualizing the segmentation mask.
     Args:
@@ -40,6 +41,8 @@ def get_palette(num_cls):
     return palette.astype("uint8") # cast to uint8 and return
 
 
+#Aquesta funcio et retorna True o False si un label en concret esta a la imatge de segmentació que ens ha donat el model
+#apart et retorna la mascara (1 la part de peça de roba i 0 lo que no es la peça de roba) de la peça de roba en concret (string label)
 def is_label_in_image(img, string_label, LABELS_utils, colors_utils):
 
     index = LABELS_utils.index(string_label)
@@ -51,6 +54,7 @@ def is_label_in_image(img, string_label, LABELS_utils, colors_utils):
     else:
         return True, mask
 
+#Aquesta funcio s'utilitza per ajustar la imatge del patró que volem posar a la roba
 def adjust_pattern(img, pattern):
     h, w = img.shape[0], img.shape[1]
     hp, wp = pattern.shape[0], pattern.shape[1]
@@ -74,17 +78,20 @@ def adjust_pattern(img, pattern):
     return pattern
 
 
-
+#aquesta es la funció que sencarrega de aplicar el patro a la peça de roba
 def change_pattern(img, mask_uint8, pattern):
+    
+    #Obtenim la imatge original pero amb la part on hi ha la roba que volem segmentar a 0 ("amb un forat")
     input_img_no_clothes = img.copy()
     input_img_no_clothes[:, :, 0] = cv2.bitwise_not(mask_uint8) * img[:, :, 0]
     input_img_no_clothes[:, :, 1] = cv2.bitwise_not(mask_uint8) * img[:, :, 1]
     input_img_no_clothes[:, :, 2] = cv2.bitwise_not(mask_uint8) * img[:, :, 2]
     input_img_no_clothes = input_img_no_clothes * 255
     #plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
-
+    
+    #Obtenim la part de la roba que volem segmentar de la imatge original i tota la resta a 0
     im_shape = img.copy()
-
+    
     im_shape[:,:,0] = mask_uint8*img[:,:,0]
     im_shape[:,:,1] = mask_uint8*img[:,:,1]
     im_shape[:,:,2] = mask_uint8*img[:,:,2]
@@ -92,7 +99,8 @@ def change_pattern(img, mask_uint8, pattern):
     im_shape = im_shape * 255
 
    # plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
-
+      
+    #apliquem canny per a obtenir les caracteristiques de la textura de la peça de roba
     im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
     im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
     im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
@@ -103,6 +111,7 @@ def change_pattern(img, mask_uint8, pattern):
     im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
     im_shape_def= im_shape_def.astype('uint8')
 
+    #Apliquem morfologia binaria a la mascara de la textura per a remarcar mes la textura
     kernel = np.ones((3, 3), np.uint8)
     im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
 
@@ -117,9 +126,11 @@ def change_pattern(img, mask_uint8, pattern):
     # adjust pattern to image size
     pattern = adjust_pattern(img, pattern)
 
+    #normalitzem les imatges per a poder fer les multiplicacions de la imatge patro editada i la original editada
     img = img / 255
     mask_uint8 = mask_uint8 / 255
 
+    #Fem un "blur manual" difuminant las parts de la imatge que coincideixen amb la mascara de textura
     masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
     img[masked_non_shape > 0] = 0.85
     img[masked_non_shape == 0] *= 1.5
@@ -129,16 +140,20 @@ def change_pattern(img, mask_uint8, pattern):
     img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * pattern[:, :, 1]))
     img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * pattern[:, :, 2]))
 
+    #Tornem a invertir la normalitzacio
     img = img * 255
     img = img.astype('uint8')
 
     #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
 
+    #Sumem la imatge original sense la peça de roba amb la peça de roba modificada
     img = input_img_no_clothes + img
     return img
 
-
+#aquesta es la funció que sencarrega de aplicar el color a la peça de roba
 def change_colour(img, mask_uint8, colour_rgb):
+    #Obtenim la imatge original pero amb la part on hi ha la roba que volem segmentar a 0 ("amb un forat")
+
     input_img_no_clothes = img.copy()
     input_img_no_clothes[:, :, 0] = cv2.bitwise_not(mask_uint8) * img[:, :, 0]
     input_img_no_clothes[:, :, 1] = cv2.bitwise_not(mask_uint8) * img[:, :, 1]
@@ -146,6 +161,7 @@ def change_colour(img, mask_uint8, colour_rgb):
     input_img_no_clothes = input_img_no_clothes * 255
     #plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
 
+    #Obtenim la part de la roba que volem segmentar de la imatge original i tota la resta a 0
     im_shape = img.copy()
 
     im_shape[:, :, 0] = mask_uint8 * img[:, :, 0]
@@ -155,7 +171,7 @@ def change_colour(img, mask_uint8, colour_rgb):
     im_shape = im_shape * 255
 
     #plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
-
+    #apliquem canny per a obtenir les caracteristiques de la textura de la peça de roba
     im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
     im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
     im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
@@ -165,7 +181,8 @@ def change_colour(img, mask_uint8, colour_rgb):
     im_shape = im_shape.astype(bool)
     im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
     im_shape_def = im_shape_def.astype('uint8')
-
+    
+    #Apliquem morfologia binaria a la mascara de la textura per a remarcar mes la textura
     kernel = np.ones((1, 1), np.uint8)
     im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
 
@@ -177,10 +194,12 @@ def change_colour(img, mask_uint8, colour_rgb):
     img[:, :, 1] = img_gray
     img[:, :, 2] = img_gray
 
+    #normalitzem les imatges per a poder fer les multiplicacions de la imatge amb colors modificats editada i la original editada
     img = img / 255
     mask_uint8 = mask_uint8 / 255
     colour_rgb = colour_rgb / 255
-
+    
+    #Fem un "blur manual" difuminant las parts de la imatge que coincideixen amb la mascara de textura
     masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
     img[masked_non_shape > 0] = 0.85
     img[masked_non_shape == 0] *= 1.5
@@ -188,16 +207,20 @@ def change_colour(img, mask_uint8, colour_rgb):
     img[:, :, 0] = np.multiply(img[:, :, 0], (mask_uint8 * colour_rgb[0]))
     img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * colour_rgb[1]))
     img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * colour_rgb[2]))
-
+ 
+    #Tornem a invertir la normalitzacio
     img = img * 255
     img = img.astype('uint8')
 
     #plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
-
+    
+    
+    #Sumem la imatge original sense la peça de roba amb la peça de roba modificada
     img = input_img_no_clothes + img
     return img
 
 
+#Aquesta funcio et retorna els "labels", les peçes de roba, que te una imatge
 def return_labels(im_output, LABELS_utils, colors):
     labels = []
 
@@ -213,7 +236,7 @@ def return_labels(im_output, LABELS_utils, colors):
 
     return labels
 
-
+#Aquesta funcio et retorna la mascara de la segmentacio per peçes de roba de la imatge
 def return_mask(im_input):
 
     for i in range(1, 6):
