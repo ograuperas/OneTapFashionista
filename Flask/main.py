@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from werkzeug.serving import WSGIRequestHandler
 from google.cloud import storage
+from datetime import datetime
 
 import utils
 
@@ -88,9 +89,13 @@ def returnImage():
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
 
+
+
+    now = datetime.now()
+    dt_string = now.strftime("%d%m%Y%H%M%S")
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
-    blob = bucket.blob('file2.txt')
+    blob = bucket.blob('npimg_'+dt_string +'.txt')
     blob.upload_from_string(np.array2string(im_input))
     
     success, encoded_image = cv2.imencode('.png', im_input)
