@@ -30,19 +30,20 @@ def getImage():
     content = request.get_json()
     resposta = content['image']
 
+    #Descodifiquem l'imatge, aquesta és rebuda com una llista de bytes i la convertim a numpy array
     image = bytes(resposta)
     nparr = np.frombuffer(image, np.uint8)
     im_input = cv2.imdecode(nparr, 1)
+    
+    im_output, input_image, output_image = utils.return_mask(im_input)
 
-    im_output,input_image,output_image = utils.return_mask(im_input)
-
-    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
-    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out1.png', im_output)
-    im_output = cv2.imread('/workspace/img/out/' + output_image)  # Output Model
-
+    im_output = cv2.imread('/workspace/img/out/' + output_image) 
+    
+    #Cridem a la funcio que ens retorna una llista amb els elements de roba detectats a l'imatge
     colors = utils.get_palette(20)
     labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
 
+    #Map dels elements que detecta el model per poder passar els identificadors a l'app
     iconMap = {'Hat': 10, 'Upper-clothes': 8, 'Dress': 2, 'Coat': 9,'Socks': 6, 'Pants': 1, 'Jumpsuits': 7, 'Scarf': 3, 'Skirt': 5}
     llista = []
     for i in labels_in_image:
@@ -50,6 +51,7 @@ def getImage():
 
     aux = {'llista': llista, 'res': 'ok'}
 
+    #Enviem com a resposta un JSON amb les caracteristiques de la imatge
     response = jsonify(aux)
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
@@ -88,23 +90,29 @@ def returnImage():
     else:
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
-
+    
+    #obtenim la data i l'hora actual per identificar les imatges de manera unica
     now = datetime.now()
     dt_string = now.strftime("%d%m%Y%H%M%S")
+    
+    #realitzem la connexió amb Cloud Storage
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
     blob = bucket.blob('img_'+dt_string +'.png')
     
+    #Codifiquem l'imatge a llista de bytes per tal que el client la pugui interpretar.
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
     
+    #guardem la imatge generada a Cloud Storage
     blob.upload_from_string(bytes(content2), content_type='image/png')
     
+    #Enviem com a resposta un JSON amb l'imatge codificada
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
 if __name__ == '__main__':
-    WSGIRequestHandler.protocol_version = "HTTP/1.1"  # keep alive
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"  #s'utilitza per poder tenir una connexió de tipus Keep-Alive
     app.run()
-#python3 simple_extractor.py --dataset 'lip' --model-restore 'checkpoints/final.pth' --input-dir 'inputs' --output-dir 'outputs'
+
