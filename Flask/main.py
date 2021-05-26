@@ -90,14 +90,13 @@ def returnImage():
 
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
-    print(type(bucket))
-    blob = bucket.blob('resut/1.png')
-    print(type(blob))
-    blob.upload_from_filename('/workspace/img/out/out1.png')
-
+    blob = bucket.blob('1.png')
+    
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
-
+    
+    blob.upload_from_string(content2, content_type='image/png')
+    
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
