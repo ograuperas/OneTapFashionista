@@ -1,267 +1,112 @@
 import cv2
+from flask import Flask, send_file, jsonify, request, send_from_directory
+from flask_cors import CORS
+import json
+import io
+import os
+import PIL.Image as Image
 import numpy as np
 import matplotlib.pyplot as plt
-#from training_model import * 
+from werkzeug.serving import WSGIRequestHandler
+from google.cloud import storage
+from datetime import datetime
 
-"""
-!git clone https://github.com/PeikeLi/Self-Correction-Human-Parsing
-%cd Self-Correction-Human-Parsing
-!mkdir checkpoints
-!mkdir inputs
-!mkdir outputs
-"""
+import utils
 
+app = Flask(__name__)
+CORS(app)
+LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat',
+                    'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
+                    'Right-leg', 'Left-shoe', 'Right-shoe']
+input_image = ''
+output_image = ''
 
-def get_palette(num_cls):
-    """ Returns the color map for visualizing the segmentation mask.
-    Args:
-        num_cls: Number of classes
-    Returns:
-        The color map
-    """
+@app.route('/getImage', methods=['GET', 'POST'])
+def getImage():
+    global LABELS_utils
+    global input_image
+    global output_image
 
-    n = num_cls
-    palette = [0] * (n * 3)
-    for j in range(0, n):
-        lab = j
-        palette[j * 3 + 0] = 0
-        palette[j * 3 + 1] = 0
-        palette[j * 3 + 2] = 0
-        i = 0
-        while lab:
-            palette[j * 3 + 0] |= (((lab >> 0) & 1) << (7 - i))
-            palette[j * 3 + 1] |= (((lab >> 1) & 1) << (7 - i))
-            palette[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
-            i += 1
-            lab >>= 3
+    content = request.get_json()
+    resposta = content['image']
 
-    palette = np.asarray(palette) # change to array
-    palette= np.reshape(palette,(20,3)) # split it in 20 triplets (r,g,b)
-    return palette.astype("uint8") # cast to uint8 and return
+    image = bytes(resposta)
+    nparr = np.frombuffer(image, np.uint8)
+    im_input = cv2.imdecode(nparr, 1)
 
+    im_output,input_image,output_image = utils.return_mask(im_input)
 
-def is_label_in_image(img, string_label, LABELS_utils, colors_utils):
+    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
+    #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/out1.png', im_output)
+    im_output = cv2.imread('/workspace/img/out/' + output_image)  # Output Model
 
-    index = LABELS_utils.index(string_label)
-    color_roba = colors_utils[index]
-    mask = np.all(img == (color_roba[2], color_roba[1], color_roba[0]), axis=-1)
+    colors = utils.get_palette(20)
+    labels_in_image = utils.return_labels(im_output, LABELS_utils, colors)
 
-    if np.all(mask == False):
-        return False, mask
+    iconMap = {'Hat': 10, 'Upper-clothes': 8, 'Dress': 2, 'Coat': 9,'Socks': 6, 'Pants': 1, 'Jumpsuits': 7, 'Scarf': 3, 'Skirt': 5}
+    llista = []
+    for i in labels_in_image:
+        llista.append({'icon': iconMap[i], 'name': i})
+
+    aux = {'llista': llista, 'res': 'ok'}
+
+    response = jsonify(aux)
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+
+@app.route('/returnImage', methods=['GET', 'POST'])
+def returnImage():
+    global input_image
+    global output_image
+    content = request.get_json()
+    resposta = content
+    print(resposta)
+
+    im_input = cv2.imread('/workspace/img/in/' + input_image) #input Model
+    im_output = cv2.imread('/workspace/img/out/' + output_image) #Output Model
+
+    colors = utils.get_palette(20)
+    global LABELS_utils
+
+    iconMap = {10: 'Hat', 8: 'Upper-clothes', 2: 'Dress', 9: 'Coat', 6: 'Socks', 1: 'Pants', 7: 'Jumpsuits', 3: 'Scarf', 5: 'Skirt'}
+    textureMap = {0: '/workspace/patterns/blue_feathers.jpg',
+                  1: '/workspace/patterns/heads.jpg',
+                  2: '/workspace/patterns/olivo.jpg'}
+
+    LABELS_K_VOLS = iconMap[resposta['roba']]
+
+    cloth_in_image, mask = utils.is_label_in_image(im_output, LABELS_K_VOLS, LABELS_utils, colors)
+    mask_uint8 = mask.astype('uint8') * 255
+
+    if resposta['isColor']:
+        hex = resposta['color']
+        hex = hex.lstrip('#')
+        hlen = len(hex)
+        rgbs = list(tuple(int(hex[i:i + hlen // 3], 16) for i in range(0, hlen, hlen // 3)))
+        rgb = np.flip(np.asarray(rgbs))
+        im_input = utils.change_colour(im_input, mask_uint8, rgb)
     else:
-        return True, mask
-
-def adjust_pattern(img, pattern):
-    h, w = img.shape[0], img.shape[1]
-    hp, wp = pattern.shape[0], pattern.shape[1]
-
-    if(h < hp):
-        pattern = pattern[:h,:,:]
-    else:
-        while (hp < (h-hp)):
-            pattern=cv2.vconcat([pattern,pattern[:hp,:,:]])
-            hp = pattern.shape[0]
-        pattern = cv2.vconcat([pattern,pattern[:h-hp,:,:]])
-
-    if(w < wp):
-        pattern = pattern[:,:w,:]
-    else:
-        while (wp < (w-wp)):
-            pattern=cv2.hconcat([pattern,pattern[:,:wp,:]])
-            wp = pattern.shape[1]
-        pattern = cv2.hconcat([pattern, pattern[:,:w-wp,:]])
-
-    return pattern
+        pattern = cv2.imread(textureMap[resposta['textura']])
+        im_input = utils.change_pattern(im_input, mask_uint8, pattern)
 
 
 
-def change_pattern(img, mask_uint8, pattern):
-    input_img_no_clothes = img.copy()
-    input_img_no_clothes[:, :, 0] = cv2.bitwise_not(mask_uint8) * img[:, :, 0]
-    input_img_no_clothes[:, :, 1] = cv2.bitwise_not(mask_uint8) * img[:, :, 1]
-    input_img_no_clothes[:, :, 2] = cv2.bitwise_not(mask_uint8) * img[:, :, 2]
-    input_img_no_clothes = input_img_no_clothes * 255
-    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
-
-    im_shape = img.copy()
-
-    im_shape[:,:,0] = mask_uint8*img[:,:,0]
-    im_shape[:,:,1] = mask_uint8*img[:,:,1]
-    im_shape[:,:,2] = mask_uint8*img[:,:,2]
-
-    im_shape = im_shape * 255
-
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
-
-    im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
-    im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
-    im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
-
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('canny'), plt.show()
-
-    im_shape = im_shape.astype(bool)
-    im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
-    im_shape_def= im_shape_def.astype('uint8')
-
-    kernel = np.ones((3, 3), np.uint8)
-    im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
-
-    plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
-
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
-    img[:,:,0] = img_gray
-    img[:,:,1] = img_gray
-    img[:,:,2] = img_gray
-
-    # adjust pattern to image size
-    pattern = adjust_pattern(img, pattern)
-
-    img = img / 255
-    mask_uint8 = mask_uint8 / 255
-
-    masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
-    img[masked_non_shape > 0] = 0.85
-    img[masked_non_shape == 0] *= 1.5
-    pattern = pattern / 255
-    # np.multiply(m, m) multiplicación punto a punto de dos matrices. Funciona pero need to me same size
-    img[:, :, 0] = np.multiply(img[:, :, 0], (mask_uint8 * pattern[:, :, 0]))
-    img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * pattern[:, :, 1]))
-    img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * pattern[:, :, 2]))
-
-    img = img * 255
-    img = img.astype('uint8')
-
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
-
-    img = input_img_no_clothes + img
-    return img
-
-
-
-
-def change_colour(img, mask_uint8, colour_rgb):
-
-    input_img_no_clothes = img.copy()
-    input_img_no_clothes[:,:,0] = cv2.bitwise_not(mask_uint8)*img[:,:,0]
-    input_img_no_clothes[:,:,1] = cv2.bitwise_not(mask_uint8)*img[:,:,1]
-    input_img_no_clothes[:,:,2] = cv2.bitwise_not(mask_uint8)*img[:,:,2]
-    input_img_no_clothes = input_img_no_clothes*255
-    plt.imshow(cv2.cvtColor(input_img_no_clothes, cv2.COLOR_BGR2RGB)), plt.suptitle('Source image minus mask'), plt.show()
-
-
-    im_shape = img.copy()
-
-    im_shape[:,:,0] = mask_uint8*img[:,:,0]
-    im_shape[:,:,1] = mask_uint8*img[:,:,1]
-    im_shape[:,:,2] = mask_uint8*img[:,:,2]
-
-    im_shape = im_shape * 255
-
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('label'), plt.show()
-
-    im_shape[:, :, 0] = cv2.Canny(im_shape[:, :, 0], 80, 160)
-    im_shape[:, :, 1] = cv2.Canny(im_shape[:, :, 1], 80, 160)
-    im_shape[:, :, 2] = cv2.Canny(im_shape[:, :, 2], 80, 160)
-
-    plt.imshow(cv2.cvtColor(im_shape, cv2.COLOR_BGR2RGB)), plt.suptitle('canny'), plt.show()
-
-    im_shape = im_shape.astype(bool)
-    im_shape_def = im_shape[:, :, 0] + im_shape[:, :, 1] + im_shape[:, :, 2]
-    im_shape_def= im_shape_def.astype('uint8')
-
-    kernel = np.ones((3, 3), np.uint8)
-    im_shape_def = cv2.dilate(im_shape_def, kernel, iterations=1)
-
-    plt.imshow(im_shape_def), plt.suptitle('tri_canny'), plt.show()
-
-
-        
-    img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = np.zeros((img_gray.shape[0], img_gray.shape[1], 3))
-    img[:,:,0] = img_gray
-    img[:,:,1] = img_gray
-    img[:,:,2] = img_gray
-
-    img = img/255
-    mask_uint8 = mask_uint8/255
-    colour_rgb = colour_rgb/255
-
-    masked_non_shape = mask_uint8 - im_shape_def.astype("float64")
-    img[masked_non_shape > 0] = 0.85
-    img[masked_non_shape == 0] *= 1.5
-    # np.multiply(m, m) multiplicación punto a punto de dos matrices. Funciona pero need to me same size
-    img[:, :, 0] = np.multiply(img[:, :, 0], (mask_uint8 * colour_rgb[0]))
-    img[:, :, 1] = np.multiply(img[:, :, 1], (mask_uint8 * colour_rgb[1]))
-    img[:, :, 2] = np.multiply(img[:, :, 2], (mask_uint8 * colour_rgb[2]))
-
-    img = img*255
-    img = img.astype('uint8')
-
-    plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.suptitle('Recolored cloth piece'), plt.show()
-
-    img = input_img_no_clothes + img
-    return img
-
-
-def return_labels(im_output, LABELS_utils, colors):
-
-    labels = []
+    now = datetime.now()
+    dt_string = now.strftime("%d%m%Y%H%M%S")
+    client = storage.Client()
+    bucket = client.get_bucket('onetapfashionista.appspot.com')
+    blob = bucket.blob('npimg_'+dt_string +'.png')
+    #blob.upload_from_string(np.array2string(im_input))
+    blob.upload_from_string(bytes(content2), content_type='image/png')
     
-    llista_negra = ['Background', 'Hair', 'Glove', 'Sunglasses', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
-          'Right-leg', 'Left-shoe', 'Right-shoe']
-    
-    for label in LABELS_utils:
-        bool_label, _ = is_label_in_image(im_output, label, LABELS_utils, colors)
-        if bool_label == True:
-            bool2 = label in llista_negra
-            if bool2 == False:
-                labels.append(label)
-    
-    return labels
-            
-    
+    success, encoded_image = cv2.imencode('.png', im_input)
+    content2 = np.concatenate(encoded_image, axis=0)
 
-if __name__ == "__main__":
+    response = jsonify(imatge=content2.tolist())
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
 
-    #dowload_model()
-    #make_prediction()
-    
-    im_input = cv2.imread('images/in.jpg')
-    im_output = cv2.imread('images/out.png')
-
-   
-    
-    colors = get_palette(20)
-
-    
-    LABELS_utils = ['Background', 'Hat', 'Hair', 'Glove', 'Sunglasses', 'Upper-clothes', 'Dress', 'Coat',
-          'Socks', 'Pants', 'Jumpsuits', 'Scarf', 'Skirt', 'Face', 'Left-arm', 'Right-arm', 'Left-leg',
-          'Right-leg', 'Left-shoe', 'Right-shoe']
-
-    
-    labels_in_image = return_labels(im_output, LABELS_utils, colors)
-    
-    LABELS_K_VOLS = ['Coat']
-    rgbs = [[255,0,255],[50, 231, 241], [128,128,128]]
-
-    for x, label in enumerate(LABELS_K_VOLS):
-        cloth_in_image, mask = is_label_in_image(im_output, label, LABELS_utils, colors)
-        plt.imshow(cv2.cvtColor(im_output, cv2.COLOR_BGR2RGB)), plt.suptitle('Cloth detections'), plt.show()
-        
-        mask_uint8 = mask.astype('uint8')*255
-        plt.imshow(cv2.cvtColor(mask_uint8, cv2.COLOR_BGR2RGB)), plt.suptitle('Matching pixels with label'), plt.show()
-        
-        plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Source Image'), plt.show()
-
-        rgb = np.flip(np.asarray(rgbs[x]))
-
-        pattern=cv2.imread('patterns/blue_feathers.jpg')
-
-        im_input = change_colour(im_input, mask_uint8, rgb)
-        #im_input = change_pattern(im_input, mask_uint8, pattern)
-        plt.imshow(cv2.cvtColor(im_input, cv2.COLOR_BGR2RGB)), plt.suptitle('Final Result'), plt.show()
-
-
-
-    cv2.imwrite("images/final.png", im_input)
+if __name__ == '__main__':
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"  # keep alive
+    app.run()
+#python3 simple_extractor.py --dataset 'lip' --model-restore 'checkpoints/final.pth' --input-dir 'inputs' --output-dir 'outputs'
