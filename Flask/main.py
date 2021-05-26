@@ -88,14 +88,14 @@ def returnImage():
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
 
-    client = storage.Client()
-    bucket = client.get_bucket('onetapfashionista.appspot.com')
-    blob = bucket.blob('1.png')
+    #client = storage.Client()
+    #bucket = client.get_bucket('onetapfashionista.appspot.com')
+    #blob = bucket.blob('file')
     
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
     
-    blob.upload_from_string(content2, content_type='image/png')
+    #blob.upload_from_string(content2, content_type='image/png')
     
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
