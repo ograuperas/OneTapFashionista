@@ -8,6 +8,7 @@ import PIL.Image as Image
 import numpy as np
 import matplotlib.pyplot as plt
 from werkzeug.serving import WSGIRequestHandler
+from google.cloud import storage
 
 import utils
 
@@ -86,6 +87,11 @@ def returnImage():
     else:
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
+
+    client = storage.Client()
+    bucket = client.get_bucket('onetapfashionista.appspot.com')
+    blob = bucket.get_blob('file.png')
+    blob.upload_from_string('New contents!')
 
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
