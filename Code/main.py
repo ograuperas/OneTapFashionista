@@ -70,16 +70,18 @@ def returnImage():
     colors = utils.get_palette(20)
     global LABELS_utils
 
+    #Map per convertir els elements seleccionats per l'usuari a l'app a el que enten el codi back-end
     iconMap = {10: 'Hat', 8: 'Upper-clothes', 2: 'Dress', 9: 'Coat', 6: 'Socks', 1: 'Pants', 7: 'Jumpsuits', 3: 'Scarf', 5: 'Skirt'}
     textureMap = {0: '/workspace/patterns/blue_feathers.jpg',
                   1: '/workspace/patterns/heads.jpg',
                   2: '/workspace/patterns/olivo.jpg'}
-
+    
     LABELS_K_VOLS = iconMap[resposta['roba']]
-
+    
     cloth_in_image, mask = utils.is_label_in_image(im_output, LABELS_K_VOLS, LABELS_utils, colors)
     mask_uint8 = mask.astype('uint8') * 255
 
+    #Depenent si l'usuari ha escollit canviar el color o posar una textura es cridarà a la funció corresponent
     if resposta['isColor']:
         hex = resposta['color']
         hex = hex.lstrip('#')
