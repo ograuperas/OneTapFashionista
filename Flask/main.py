@@ -36,9 +36,9 @@ def getImage():
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
     print(type(bucket))
-    blob = bucket.blob('/out/')
+    blob = bucket.blob('/out')
     print(type(blob))
-    blob.download_to_filename('/workspace/img/out/')
+    blob.download_to_filename('/workspace/img/out')
     
     
     
