@@ -215,8 +215,7 @@ def return_labels(im_output, LABELS_utils, colors):
 
 
 def return_mask(im_input):
-    print(len(os.listdir()))
-    print(os.listdir())
+
     for i in range(1, 6):
 
         im_output = cv2.imread('/workspace/img/out/out' + str(i) + '.png')
