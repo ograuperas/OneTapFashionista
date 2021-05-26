@@ -95,8 +95,9 @@ def returnImage():
     dt_string = now.strftime("%d%m%Y%H%M%S")
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
-    blob = bucket.blob('npimg_'+dt_string +'.txt')
-    blob.upload_from_string(np.array2string(im_input))
+    blob = bucket.blob('npimg_'+dt_string +'.png')
+    #blob.upload_from_string(np.array2string(im_input))
+    blob.upload_from_string(bytes(content2), content_type='image/png')
     
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
