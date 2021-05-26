@@ -1,9 +1,9 @@
 # ONE TAP FASHIONISTA
 ### What is One Tap Fashionista? 
-One Tap Fashionista is a project from four computer engineering students from Universitat Autònoma de Barcelona. Our project is part of Multimedia Systems' Hackaton of Google Cloud.
+One Tap Fashionista is a project from four computer engineering students from Universitat Autònoma de Barcelona. Our project is part of Multimedia Systems' Hackaton of Google Cloud Features.
 
 In this project we aim to build an application that is able to detect clothes in a photo and then change to any colour or a texture pattern.
-The main idea is that every user with the app can upload or take photos and the edit it, like a fashion designer!
+The main idea is that every user with the app can upload or take photos and then edit it, like a fashion designer!
 
 ## Software achitecture
 
