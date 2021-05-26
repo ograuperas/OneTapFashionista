@@ -89,19 +89,17 @@ def returnImage():
         pattern = cv2.imread(textureMap[resposta['textura']])
         im_input = utils.change_pattern(im_input, mask_uint8, pattern)
 
-
-
     now = datetime.now()
     dt_string = now.strftime("%d%m%Y%H%M%S")
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
-    blob = bucket.blob('npimg_'+dt_string +'.png')
-    #blob.upload_from_string(np.array2string(im_input))
-    blob.upload_from_string(bytes(content2), content_type='image/png')
+    blob = bucket.blob('img_'+dt_string +'.png')
     
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
-
+    
+    blob.upload_from_string(bytes(content2), content_type='image/png')
+    
     response = jsonify(imatge=content2.tolist())
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
