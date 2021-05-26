@@ -90,8 +90,10 @@ def returnImage():
 
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
-    blob = bucket.get_blob('/workspace/img/out/out1.png')
-    blob.upload_from_string('New contents!')
+    print(type(bucket))
+    blob = bucket.blob('out1.png')
+    print(type(blob))
+    blob.upload_from_filename('/workspace/img/out/out1.png')
 
     success, encoded_image = cv2.imencode('.png', im_input)
     content2 = np.concatenate(encoded_image, axis=0)
