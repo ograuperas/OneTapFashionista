@@ -4,3 +4,4 @@ requests==2.25.1
 flask_cors==3.0.10
 opencv-python==4.4.0.46
 matplotlib==3.3.4
+google-cloud-storage==1.38.0
