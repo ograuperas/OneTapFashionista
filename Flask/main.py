@@ -32,7 +32,16 @@ def getImage():
     image = bytes(resposta)
     nparr = np.frombuffer(image, np.uint8)
     im_input = cv2.imdecode(nparr, 1)
-
+    
+    client = storage.Client()
+    bucket = client.get_bucket('onetapfashionista.appspot.com')
+    print(type(bucket))
+    blob = bucket.blob('/out/')
+    print(type(blob))
+    blob.download_to_filename('/workspace/img/out/')
+    
+    
+    
     im_output,input_image,output_image = utils.return_mask(im_input)
 
     #cv2.imwrite('O:/Escriptori/SM/Flask/img/actuals/in1.jpg', im_input)
@@ -91,7 +100,7 @@ def returnImage():
     client = storage.Client()
     bucket = client.get_bucket('onetapfashionista.appspot.com')
     print(type(bucket))
-    blob = bucket.blob('out1.png')
+    blob = bucket.blob('resut/1.png')
     print(type(blob))
     blob.upload_from_filename('/workspace/img/out/out1.png')
 
