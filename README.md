@@ -14,10 +14,10 @@ This is our software architecture scheme:
 
 When the photo is uploaded, the app's backend call the predictor hosted on the cloud server. The server returns a list of the predicted labels so the user can change the colors or patterns of the selected cloth piece.
 
-After the user it's done with it, the backend sends a request to the server, which applies the ModifyCloths function to realize the change. The server answers the request and the user gets the modified photo
+After the user finished selecting the color/pattern and the item of clothing, the app send a request to the server with the information needed and the backend creates a new image with the modifications. The server answers the request and the user gets the modified photo.
 
 ## Mobile application
-
+It has been developed with flutter framework
 
 
 ## Demonstration
