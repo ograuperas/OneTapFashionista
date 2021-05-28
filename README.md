@@ -20,7 +20,7 @@ After the user it's done with it, the backend sends a request to the server, whi
 
 
 ## Demonstration
-![output_DdoRzw](https://user-images.githubusercontent.com/49688038/119985962-9be5f900-bfc3-11eb-8aca-197ece0de6f2.gif)
+![gif](https://user-images.githubusercontent.com/49688038/119985962-9be5f900-bfc3-11eb-8aca-197ece0de6f2.gif)
 
 
 ## Authors
