@@ -1,4 +1,5 @@
 # ONE TAP FASHIONISTA
+In Progress
 ### What is One Tap Fashionista? 
 One Tap Fashionista is a project from four computer engineering students from Universitat Autònoma de Barcelona. Our project is part of Multimedia Systems' Hackathon of Google Cloud Features.
 
